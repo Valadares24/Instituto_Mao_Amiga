@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Instituto Mão Amiga",
+    "slug": "instituto-mao-amiga",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "light",
+    "scheme": "maoamiga",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "br.org.maoamiga.demonstracao"
+    },
+    "android": {
+      "package": "br.org.maoamiga.demonstracao"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Instituto Mão Amiga",
+      "description": "Pontos de coleta e histórico local de doações."
+    }
+  }
+}
