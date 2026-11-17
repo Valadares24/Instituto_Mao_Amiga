@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TelaPontos from './src/telas/TelaPontos.js';
 import TelaDetalhePonto from './src/telas/TelaDetalhePonto.js';
 import TelaFormularioPonto from './src/telas/TelaFormularioPonto.js';
+import TelaMeusPontos from './src/telas/TelaMeusPontos.js';
 import TelaFormularioDoacao from './src/telas/TelaFormularioDoacao.js';
 import TelaHistoricoDoacoes from './src/telas/TelaHistoricoDoacoes.js';
 import TelaDetalheDoacao from './src/telas/TelaDetalheDoacao.js';
@@ -58,6 +59,7 @@ export default function App() {
           })}
         >
           <Pilha.Screen name="PontosColeta" component={TelaPontos} options={{ title: 'Instituto Mão Amiga' }} />
+          <Pilha.Screen name="MeusPontos" component={TelaMeusPontos} options={{ title: 'Meus pontos' }} />
           <Pilha.Screen name="DetalhePonto" component={TelaDetalhePonto} options={{ title: 'Ponto de coleta' }} />
           <Pilha.Screen name="FormularioPonto" component={TelaFormularioPonto} options={{ title: 'Novo ponto' }} />
           <Pilha.Screen name="FormularioDoacao" component={TelaFormularioDoacao} options={{ title: 'Cadastrar doação' }} />

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Botao, CabecalhoSecao, Etiqueta, MensagemEstado, Pagina } from '../componentes/Interface.js';
+import { alternarFavorito, listarIdsFavoritos } from '../services/favoritosService.ts';
 import { buscarPagina } from '../services/pontosService.ts';
 import { CORES, ESTILOS } from '../tema.js';
 
@@ -9,6 +10,7 @@ const TAMANHO_PAGINA = 10;
 
 export default function TelaPontos({ navigation }) {
   const [pontos, definirPontos] = useState([]);
+  const [favoritosIds, definirFavoritosIds] = useState([]);
   const [busca, definirBusca] = useState('');
   const [termoAplicado, definirTermoAplicado] = useState('');
   const [carregandoInicial, definirCarregandoInicial] = useState(true);
@@ -105,6 +107,9 @@ export default function TelaPontos({ navigation }) {
   useFocusEffect(
     useCallback(() => {
       carregarPagina(0, termoAplicado, true);
+      listarIdsFavoritos()
+        .then(definirFavoritosIds)
+        .catch(() => {});
     }, [termoAplicado, carregarPagina]),
   );
 
@@ -117,6 +122,15 @@ export default function TelaPontos({ navigation }) {
 
   function abrirPonto(ponto) {
     navigation.navigate('DetalhePonto', { id: ponto.id });
+  }
+
+  async function alternarPontoFavorito(id) {
+    try {
+      const atualizados = await alternarFavorito(id);
+      definirFavoritosIds(atualizados);
+    } catch {
+      // Falha silenciosa preservando a navegação da lista.
+    }
   }
 
   function renderizarEstadoLista() {
@@ -195,6 +209,13 @@ export default function TelaPontos({ navigation }) {
                 testID="novo-ponto"
               />
               <Botao
+                titulo="Meus pontos"
+                variante="secundario"
+                aoPressionar={() => navigation.navigate('MeusPontos')}
+                style={estilos.botao}
+                testID="abrir-meus-pontos"
+              />
+              <Botao
                 titulo="Cadastrar doação"
                 variante="secundario"
                 aoPressionar={() => navigation.navigate('FormularioDoacao')}
@@ -243,31 +264,53 @@ export default function TelaPontos({ navigation }) {
             </View>
           </View>
         }
-        renderItem={({ item: ponto, index: indice }) => (
-          <Pressable
-            onPress={() => abrirPonto(ponto)}
-            accessibilityRole="button"
-            accessibilityLabel={`Ver detalhes de ${ponto.nome}, ${ponto.bairro}`}
-            testID={`ponto-${ponto.id}`}
-            style={({ pressed }) => [estilos.cartao, pressed && estilos.pressionado]}
-          >
-            <View style={estilos.linha}>
-              <View style={estilos.indicador} aria-hidden>
-                <Text style={estilos.numero}>{String(indice + 1).padStart(2, '0')}</Text>
+        renderItem={({ item: ponto, index: indice }) => {
+          const favoritado = favoritosIds.includes(ponto.id);
+          return (
+            <View style={estilos.cartao}>
+              <View style={estilos.linhaTopo}>
+                <Pressable
+                  onPress={() => abrirPonto(ponto)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Ver detalhes de ${ponto.nome}, ${ponto.bairro}`}
+                  testID={`ponto-${ponto.id}`}
+                  style={({ pressed }) => [estilos.areaClicavel, pressed && estilos.pressionado]}
+                >
+                  <View style={estilos.linha}>
+                    <View style={estilos.indicador} aria-hidden>
+                      <Text style={estilos.numero}>{String(indice + 1).padStart(2, '0')}</Text>
+                    </View>
+                    <View style={estilos.conteudo}>
+                      <Text style={estilos.nome}>{ponto.nome}</Text>
+                      <Text style={estilos.bairro}>{ponto.bairro}</Text>
+                      <Text style={estilos.endereco}>{ponto.endereco}</Text>
+                    </View>
+                  </View>
+                  <Text style={estilos.horario}>{ponto.horario}</Text>
+                </Pressable>
+
+                <TouchableOpacity
+                  onPress={() => alternarPontoFavorito(ponto.id)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={favoritado ? `Remover ${ponto.nome} dos favoritos` : `Favoritar ${ponto.nome}`}
+                  accessibilityState={{ selected: favoritado }}
+                  testID={`favorito-${ponto.id}`}
+                  style={[estilos.botaoFavorito, favoritado && estilos.botaoFavoritoAtivo]}
+                >
+                  <Text style={[estilos.iconeFavorito, favoritado && estilos.iconeFavoritoAtivo]}>
+                    {favoritado ? '♥' : '♡'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <View style={estilos.conteudo}>
-                <Text style={estilos.nome}>{ponto.nome}</Text>
-                <Text style={estilos.bairro}>{ponto.bairro}</Text>
-                <Text style={estilos.endereco}>{ponto.endereco}</Text>
-              </View>
+
+              <Pressable onPress={() => abrirPonto(ponto)} style={estilos.rodape}>
+                <Etiqueta texto={ponto.tipo === 'distribuição' ? 'Distribuição' : 'Coleta'} />
+                <Text style={estilos.link} aria-hidden>Conhecer o ponto →</Text>
+              </Pressable>
             </View>
-            <Text style={estilos.horario}>{ponto.horario}</Text>
-            <View style={estilos.rodape}>
-              <Etiqueta texto={ponto.tipo === 'distribuição' ? 'Distribuição' : 'Coleta'} />
-              <Text style={estilos.link} aria-hidden>Conhecer o ponto →</Text>
-            </View>
-          </Pressable>
-        )}
+          );
+        }}
         ListEmptyComponent={renderizarEstadoLista}
         ListFooterComponent={
           carregandoMais ? (
@@ -292,13 +335,15 @@ const estilos = StyleSheet.create({
   lista: { paddingBottom: 28, flexGrow: 1 },
   cabecalho: { gap: 20, paddingBottom: 16 },
   acoes: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  botao: { flexGrow: 1, flexBasis: 210 },
+  botao: { flexGrow: 1, flexBasis: 190 },
   busca: { gap: 8 },
   linhaLimpar: { alignItems: 'flex-end' },
   tituloLista: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 4 },
   subtitulo: { color: CORES.texto, fontSize: 21, fontWeight: '700' },
   espaco: { height: 14 },
-  cartao: { backgroundColor: CORES.superficie, borderWidth: 1, borderColor: CORES.borda, borderRadius: 20, padding: 20, gap: 14 },
+  cartao: { backgroundColor: CORES.superficie, borderWidth: 1, borderColor: CORES.borda, borderRadius: 20, padding: 18, gap: 14 },
+  linhaTopo: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  areaClicavel: { flex: 1, gap: 10, borderRadius: 12, padding: 4 },
   pressionado: { backgroundColor: CORES.primariaSuave },
   linha: { flexDirection: 'row', gap: 14, alignItems: 'flex-start' },
   indicador: { width: 46, height: 46, borderRadius: 14, backgroundColor: CORES.primariaSuave, alignItems: 'center', justifyContent: 'center' },
@@ -308,6 +353,22 @@ const estilos = StyleSheet.create({
   bairro: { color: CORES.primaria, fontSize: 14, fontWeight: '600' },
   endereco: { color: CORES.secundario, fontSize: 14, lineHeight: 20 },
   horario: { color: CORES.secundario, fontSize: 14, lineHeight: 20 },
+  botaoFavorito: {
+    minWidth: 48,
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: CORES.borda,
+    backgroundColor: CORES.superficie,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botaoFavoritoAtivo: {
+    backgroundColor: CORES.primariaSuave,
+    borderColor: CORES.primaria,
+  },
+  iconeFavorito: { color: CORES.secundario, fontSize: 24, lineHeight: 26 },
+  iconeFavoritoAtivo: { color: CORES.primaria },
   rodape: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: CORES.borda },
   link: { color: CORES.primaria, fontSize: 13, fontWeight: '700' },
   carregando: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, gap: 12 },
