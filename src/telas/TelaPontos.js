@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Botao, CabecalhoSecao, Etiqueta, MensagemEstado, Pagina } from '../componentes/Interface.js';
 import { buscarPagina } from '../services/pontosService.ts';
 import { CORES, ESTILOS } from '../tema.js';
@@ -101,9 +102,11 @@ export default function TelaPontos({ navigation }) {
     return () => clearTimeout(temporizador);
   }, [busca]);
 
-  useEffect(() => {
-    carregarPagina(0, termoAplicado, true);
-  }, [termoAplicado, carregarPagina]);
+  useFocusEffect(
+    useCallback(() => {
+      carregarPagina(0, termoAplicado, true);
+    }, [termoAplicado, carregarPagina]),
+  );
 
   function carregarProximaPagina() {
     if (carregandoRef.current || carregandoInicial || !temMaisPaginas) {
@@ -186,7 +189,14 @@ export default function TelaPontos({ navigation }) {
             />
             <View style={estilos.acoes}>
               <Botao
+                titulo="Novo ponto"
+                aoPressionar={() => navigation.navigate('FormularioPonto')}
+                style={estilos.botao}
+                testID="novo-ponto"
+              />
+              <Botao
                 titulo="Cadastrar doação"
+                variante="secundario"
                 aoPressionar={() => navigation.navigate('FormularioDoacao')}
                 style={estilos.botao}
                 testID="novo-cadastro"

@@ -8,6 +8,7 @@ import { listarDoacoes, salvarDoacao, atualizarDoacao, excluirDoacao } from './s
 import { prepararDoacao } from './src/dominio/doacoes.js';
 import TelaPontos from './src/telas/TelaPontos.js';
 import TelaDetalhePonto from './src/telas/TelaDetalhePonto.js';
+import TelaFormularioPonto from './src/telas/TelaFormularioPonto.js';
 import TelaFormularioDoacao from './src/telas/TelaFormularioDoacao.js';
 import TelaHistoricoDoacoes from './src/telas/TelaHistoricoDoacoes.js';
 import TelaDetalheDoacao from './src/telas/TelaDetalheDoacao.js';
@@ -83,6 +84,7 @@ export default function App() {
         >
           <Pilha.Screen name="PontosColeta" component={TelaPontos} options={{ title: 'Instituto Mão Amiga' }} />
           <Pilha.Screen name="DetalhePonto" component={TelaDetalhePonto} options={{ title: 'Ponto de coleta' }} />
+          <Pilha.Screen name="FormularioPonto" component={TelaFormularioPonto} options={{ title: 'Novo ponto' }} />
           <Pilha.Screen name="FormularioDoacao" options={{ title: 'Cadastrar doação' }}>
             {(props) => <TelaFormularioDoacao {...props} doacoes={doacoes} aoSalvar={registrarDoacao} estaCarregando={esta_carregando} erroCarregamento={erro_carregamento} />}
           </Pilha.Screen>
