@@ -196,7 +196,13 @@ Se a rede impedir a conexão local, use `pnpm exec expo start --tunnel`. O Expo 
 
 Para abrir um emulador Android configurado no computador, execute `pnpm android`. O comando `pnpm ios` abre o simulador de iOS em um Mac configurado; no Windows, teste iOS em um iPhone com Expo Go.
 
-### Navegador
+### Navegador e configuração do IP da API (`src/services/api.ts`)
+
+A URL base da API fica centralizada em um único arquivo: [`src/services/api.ts`](src/services/api.ts) (`IP_REDE_LOCAL` e `API_BASE_URL`).
+
+- **No navegador do computador** (`pnpm web` ou `iniciar-web.cmd`): o app usa automaticamente `http://localhost:8080`.
+- **No celular pela rede local (Expo Go)**: abra `src/services/api.ts` e altere `IP_REDE_LOCAL` para o IPv4 do computador na mesma rede Wi-Fi (ex.: `10.1.10.120`), mantendo a API rodando na porta `8080`.
+- **Validação desta entrega:** os fluxos interativos foram testados no navegador com a API local em execução (e com a API desligada para validar os estados de erro), além da geração dos bundles nativos Android e iOS (`pnpm exportar:nativo`).
 
 No Windows, você também pode abrir `iniciar-web.cmd` com dois cliques. Ele encontra o pnpm instalado e, neste computador, pode usar o runtime disponível no Codex.
 
