@@ -173,6 +173,33 @@ GET http://localhost:8080/api/v1/pontos/filtro?page=1&size=10
 
 > **Ordenação por bairro:** chamando `GET /api/v1/pontos/filtro?sort=bairro,asc&page=0&size=10`, a ordenação passa a ser crescente por `bairro` (iniciando por `Centro`, `Jardim América`, `Jardim Goiás`, ...).
 
+### Endpoints de Doações (`[N2-5]`)
+
+| Método | URL | Descrição | Status |
+|---|---|---|---|
+| `GET` | `http://localhost:8080/api/v1/doacoes/filtro?filtro=...&page=0&size=10` | Lista paginada filtrando por `tipoItem` (case-insensitive), da mais nova para a mais antiga (`criadoEm DESC`) | `200 OK` |
+| `GET` | `http://localhost:8080/api/v1/doacoes/{id}` | Busca uma doação pelo UUID | `200 OK` / `404 Not Found` |
+| `POST` | `http://localhost:8080/api/v1/doacoes` | Cadastra uma doação (`criadoEm` gerado no servidor) | `201 Created` / `400 Bad Request` |
+| `PUT` | `http://localhost:8080/api/v1/doacoes/{id}` | Atualiza uma doação preservando `id` e `criadoEm` | `200 OK` / `400 Bad Request` / `404 Not Found` |
+| `DELETE` | `http://localhost:8080/api/v1/doacoes/{id}` | Exclui uma doação pelo UUID | `204 No Content` / `404 Not Found` |
+
+#### Evidências no Swagger UI — Doações (`[N2-5]`)
+
+- **POST `/api/v1/doacoes` (201):**
+  ![POST doação](docs/swagger/n2-5-post-doacao.png)
+- **GET `/api/v1/doacoes/filtro` (200):**
+  ![GET doações filtro](docs/swagger/n2-5-get-doacoes-filtro.png)
+- **GET `/api/v1/doacoes/{id}` (200):**
+  ![GET doação por id](docs/swagger/n2-5-get-doacao-id.png)
+- **PUT `/api/v1/doacoes/{id}` (200):**
+  ![PUT doação](docs/swagger/n2-5-put-doacao.png)
+- **DELETE `/api/v1/doacoes/{id}` (204):**
+  ![DELETE doação](docs/swagger/n2-5-delete-doacao.png)
+- **POST `/api/v1/doacoes` com quantidade zero (400):**
+  ![POST doação 400](docs/swagger/n2-5-post-400.png)
+- **GET `/api/v1/doacoes/{id}` com id inexistente (404):**
+  ![GET doação 404](docs/swagger/n2-5-get-404.png)
+
 ## Executar o projeto
 
 Requisitos: Node.js compatível com a versão do Expo do projeto e pnpm disponível no terminal. As versões das dependências estão em `package.json`; o arquivo de trava do pnpm permite reproduzir a instalação.
