@@ -6,17 +6,22 @@ const FORMATO_DATA = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit', month: 'short', year: 'numeric',
 });
 
+function formatarDataSegura(valor) {
+  const data = new Date(valor);
+  return Number.isNaN(data.getTime()) ? String(valor ?? '') : FORMATO_DATA.format(data);
+}
+
 function ItemDoacao({ doacao, aoAbrir }) {
   const nomePonto = doacao.pontoDestino;
-  const data = FORMATO_DATA.format(new Date(doacao.criadoEm));
-  const quantidade = doacao.quantidade.toLocaleString('pt-BR');
+  const data = formatarDataSegura(doacao.criadoEm);
+  const quantidade = Number(doacao.quantidade).toLocaleString('pt-BR');
 
   return (
     <Pressable
       onPress={() => aoAbrir(doacao)}
       accessibilityRole="button"
-      accessibilityLabel={'Abrir doação de ' + quantidade + ' ' + (doacao.quantidade === 1 ? 'unidade' : 'unidades') + ' de ' + doacao.tipoItem + ' para ' + nomePonto + ', registrada em ' + data}
-      testID={'doacao-' + doacao.id}
+      accessibilityLabel={`Abrir doação de ${quantidade} ${doacao.quantidade === 1 ? 'unidade' : 'unidades'} de ${doacao.tipoItem} para ${nomePonto}, registrada em ${data}`}
+      testID={`doacao-${doacao.id}`}
       style={({ pressed }) => [estilos.cartao, pressed && estilos.pressionado]}
     >
       <View style={estilos.linha}>
@@ -37,8 +42,13 @@ function ItemDoacao({ doacao, aoAbrir }) {
 
 const estilos = StyleSheet.create({
   cartao: {
-    backgroundColor: CORES.superficie, borderWidth: 1, borderColor: CORES.borda,
-    borderRadius: 18, padding: 20, minHeight: 128, gap: 12,
+    backgroundColor: CORES.superficie,
+    borderWidth: 1,
+    borderColor: CORES.borda,
+    borderRadius: 18,
+    padding: 20,
+    minHeight: 128,
+    gap: 12,
   },
   pressionado: { backgroundColor: CORES.primariaSuave },
   linha: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },

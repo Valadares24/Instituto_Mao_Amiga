@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Platform, StatusBar } from 'react-native';
 import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { randomUUID } from 'expo-crypto';
-import { listarDoacoes, salvarDoacao, atualizarDoacao, excluirDoacao } from './src/armazenamento/doacoesStorage.js';
-import { prepararDoacao } from './src/dominio/doacoes.js';
 import TelaPontos from './src/telas/TelaPontos.js';
 import TelaDetalhePonto from './src/telas/TelaDetalhePonto.js';
 import TelaFormularioPonto from './src/telas/TelaFormularioPonto.js';
@@ -30,45 +27,19 @@ const TEMA_NAVEGACAO = {
 };
 
 export default function App() {
-  const [doacoes, definirDoacoes] = useState([]);
-  const [esta_carregando, definirCarregando] = useState(true);
-  const [erro_carregamento, definirErroCarregamento] = useState('');
-
-  const recarregarDoacoes = useCallback(async () => {
-    definirCarregando(true);
-    definirErroCarregamento('');
-    try {
-      definirDoacoes(await listarDoacoes());
-    } catch (erro) {
-      definirErroCarregamento(erro.message);
-    } finally {
-      definirCarregando(false);
-    }
-  }, []);
-
   useEffect(() => {
-    recarregarDoacoes();
     if (Platform.OS === 'web') {
       document.documentElement.lang = 'pt-BR';
     }
-  }, [recarregarDoacoes]);
-
-  const registrarDoacao = useCallback(async (valores, doacao_original) => {
-    const doacao = prepararDoacao(valores, doacao_original, randomUUID);
-    const doacoes_salvas = doacao_original != null
-      ? await atualizarDoacao(doacao)
-      : await salvarDoacao(doacao);
-    definirDoacoes(doacoes_salvas);
-  }, []);
-
-  const removerDoacao = useCallback(async (id) => {
-    definirDoacoes(await excluirDoacao(id));
   }, []);
 
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" backgroundColor={CORES.superficie} />
-      <NavigationContainer theme={TEMA_NAVEGACAO} documentTitle={{ formatter: (opcoes) => `${opcoes.title ?? 'Doações'} | Instituto Mão Amiga` }}>
+      <NavigationContainer
+        theme={TEMA_NAVEGACAO}
+        documentTitle={{ formatter: (opcoes) => `${opcoes.title ?? 'Doações'} | Instituto Mão Amiga` }}
+      >
         <Pilha.Navigator
           initialRouteName="PontosColeta"
           screenOptions={({ navigation }) => ({
@@ -77,7 +48,11 @@ export default function App() {
             headerShadowVisible: false,
             headerBackTitle: 'Voltar',
             headerBackVisible: false,
-            headerLeft: ({ canGoBack }) => canGoBack ? <Botao titulo="Voltar" variante="texto" aoPressionar={() => navigation.goBack()} style={{ paddingHorizontal: 8 }} /> : null,
+            headerLeft: ({ canGoBack }) => (
+              canGoBack
+                ? <Botao titulo="Voltar" variante="texto" aoPressionar={() => navigation.goBack()} style={{ paddingHorizontal: 8 }} />
+                : null
+            ),
             headerStyle: { backgroundColor: CORES.superficie },
             contentStyle: { backgroundColor: CORES.fundo },
           })}
@@ -85,15 +60,9 @@ export default function App() {
           <Pilha.Screen name="PontosColeta" component={TelaPontos} options={{ title: 'Instituto Mão Amiga' }} />
           <Pilha.Screen name="DetalhePonto" component={TelaDetalhePonto} options={{ title: 'Ponto de coleta' }} />
           <Pilha.Screen name="FormularioPonto" component={TelaFormularioPonto} options={{ title: 'Novo ponto' }} />
-          <Pilha.Screen name="FormularioDoacao" options={{ title: 'Cadastrar doação' }}>
-            {(props) => <TelaFormularioDoacao {...props} doacoes={doacoes} aoSalvar={registrarDoacao} estaCarregando={esta_carregando} erroCarregamento={erro_carregamento} />}
-          </Pilha.Screen>
-          <Pilha.Screen name="HistoricoDoacoes" options={{ title: 'Minhas doações' }}>
-            {(props) => <TelaHistoricoDoacoes {...props} doacoes={doacoes} estaCarregando={esta_carregando} erroCarregamento={erro_carregamento} aoRecarregar={recarregarDoacoes} />}
-          </Pilha.Screen>
-          <Pilha.Screen name="DetalheDoacao" options={{ title: 'Detalhe da doação' }}>
-            {(props) => <TelaDetalheDoacao {...props} doacoes={doacoes} aoExcluir={removerDoacao} />}
-          </Pilha.Screen>
+          <Pilha.Screen name="FormularioDoacao" component={TelaFormularioDoacao} options={{ title: 'Cadastrar doação' }} />
+          <Pilha.Screen name="HistoricoDoacoes" component={TelaHistoricoDoacoes} options={{ title: 'Minhas doações' }} />
+          <Pilha.Screen name="DetalheDoacao" component={TelaDetalheDoacao} options={{ title: 'Detalhe da doação' }} />
         </Pilha.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
