@@ -1,6 +1,47 @@
 # Instituto Mão Amiga
 
-Aplicativo educacional em React Native com Expo e JavaScript/JSX para Android, iOS e web. Você pode consultar pontos de coleta demonstrativos e cadastrar, consultar, editar, excluir e buscar doações. O histórico é salvo localmente com AsyncStorage.
+Aplicativo educacional em React Native com Expo e JavaScript/JSX para Android, iOS e web, integrado à API Spring Boot do projeto localizada na pasta [`api/`](api/).
+
+## API Spring Boot (`api/`)
+
+A API está localizada na pasta `api/` deste repositório (Java 17, Spring Boot 3.2.5, Spring Web, Spring Data JPA, Bean Validation, H2 em arquivo `jdbc:h2:file:./data/maoamigadb`, Lombok e Swagger/OpenAPI).
+
+### Como rodar a API
+
+```powershell
+cd api
+.\mvnw.cmd spring-boot:run
+```
+
+- **Swagger UI:** `http://localhost:8080/swagger-ui.html`
+- **Console H2:** `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:file:./data/maoamigadb`, usuário `sa`, senha vazia)
+
+### Endpoints de Pontos de Coleta (`[N2-1]`)
+
+| Método | URL | Descrição | Status |
+|---|---|---|---|
+| `GET` | `http://localhost:8080/api/v1/pontos` | Lista todos os pontos de coleta/distribuição | `200 OK` |
+| `GET` | `http://localhost:8080/api/v1/pontos/{id}` | Busca um ponto pelo UUID | `200 OK` / `404 Not Found` |
+| `POST` | `http://localhost:8080/api/v1/pontos` | Cadastra um novo ponto (com validação Bean Validation) | `201 Created` / `400 Bad Request` |
+| `PUT` | `http://localhost:8080/api/v1/pontos/{id}` | Atualiza um ponto existente | `200 OK` / `400 Bad Request` / `404 Not Found` |
+| `DELETE` | `http://localhost:8080/api/v1/pontos/{id}` | Exclui um ponto pelo UUID | `204 No Content` / `404 Not Found` |
+
+#### Evidências no Swagger UI — Pontos (`[N2-1]`)
+
+- **GET `/api/v1/pontos` (200):**
+  ![GET pontos](docs/swagger/n2-1-get-pontos.png)
+- **GET `/api/v1/pontos/{id}` (200):**
+  ![GET ponto por id](docs/swagger/n2-1-get-ponto-id.png)
+- **POST `/api/v1/pontos` (201):**
+  ![POST ponto](docs/swagger/n2-1-post-ponto.png)
+- **PUT `/api/v1/pontos/{id}` (200):**
+  ![PUT ponto](docs/swagger/n2-1-put-ponto.png)
+- **DELETE `/api/v1/pontos/{id}` (204):**
+  ![DELETE ponto](docs/swagger/n2-1-delete-ponto.png)
+- **POST `/api/v1/pontos` com campo obrigatório vazio (400):**
+  ![POST ponto 400](docs/swagger/n2-1-post-400.png)
+- **GET `/api/v1/pontos/{id}` com id inexistente (404):**
+  ![GET ponto 404](docs/swagger/n2-1-get-404.png)
 
 ## Executar o projeto
 

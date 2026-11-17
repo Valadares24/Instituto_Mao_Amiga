@@ -6,3 +6,7 @@ dist-nativo/
 *.log
 .env
 .env.*
+api/target/
+api/data/
+*.mv.db
+*.trace.db
