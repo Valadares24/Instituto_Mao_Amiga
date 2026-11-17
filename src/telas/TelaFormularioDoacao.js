@@ -1,19 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { usePreventRemove } from '@react-navigation/native';
-import { Botao, CabecalhoSecao, Pagina, TextoErro } from '../componentes/Interface.js';
+import { Botao, CabecalhoSecao, MensagemEstado, Pagina, TextoErro } from '../componentes/Interface.js';
 import { validarFormulario } from '../dominio/doacoes.js';
-import { cadastrar as cadastrarDoacao } from '../services/doacoesService.ts';
+import { ApiError } from '../services/api.ts';
+import {
+  buscarPorId as buscarDoacaoPorId,
+  cadastrar as cadastrarDoacao,
+  editar as editarDoacao,
+} from '../services/doacoesService.ts';
 import { listar as listarPontos } from '../services/pontosService.ts';
 import { CORES, ESTILOS } from '../tema.js';
 
 export default function TelaFormularioDoacao({ navigation, route }) {
+  const doacaoId = route.params?.id;
+  const ehEdicao = doacaoId !== undefined;
+
   const [tipoItem, definirTipoItem] = useState('');
   const [quantidade, definirQuantidade] = useState('');
   const [pontoDestino, definirPontoDestino] = useState(route.params?.pontoNome ?? '');
   const [pontos, definirPontos] = useState([]);
   const [carregandoPontos, definirCarregandoPontos] = useState(true);
   const [erroPontos, definirErroPontos] = useState('');
+  const [carregandoDoacao, definirCarregandoDoacao] = useState(ehEdicao);
+  const [naoEncontrada, definirNaoEncontrada] = useState(false);
+  const [erroCarregamento, definirErroCarregamento] = useState('');
   const [erros, definirErros] = useState({});
   const [erroSalvamento, definirErroSalvamento] = useState('');
   const [estaSalvando, definirEstaSalvando] = useState(false);
@@ -26,7 +37,7 @@ export default function TelaFormularioDoacao({ navigation, route }) {
 
   useEffect(() => {
     navigation.setOptions({
-      title: 'Nova doação',
+      title: ehEdicao ? 'Editar doação' : 'Nova doação',
       gestureEnabled: !estaSalvando,
       headerBackVisible: false,
       headerLeft: () => (
@@ -39,7 +50,7 @@ export default function TelaFormularioDoacao({ navigation, route }) {
         />
       ),
     });
-  }, [navigation, estaSalvando]);
+  }, [navigation, ehEdicao, estaSalvando]);
 
   const carregarPontos = useCallback(async () => {
     definirCarregandoPontos(true);
@@ -63,10 +74,47 @@ export default function TelaFormularioDoacao({ navigation, route }) {
   }, [carregarPontos]);
 
   useEffect(() => {
+    if (!ehEdicao) return undefined;
+    let ativo = true;
+
+    definirCarregandoDoacao(true);
+    definirNaoEncontrada(false);
+    definirErroCarregamento('');
+
+    buscarDoacaoPorId(doacaoId)
+      .then((doacao) => {
+        if (!ativo) return;
+        definirTipoItem(doacao.tipoItem ?? '');
+        definirQuantidade(String(doacao.quantidade ?? ''));
+        definirPontoDestino(doacao.pontoDestino ?? '');
+      })
+      .catch((erro) => {
+        if (!ativo) return;
+        if (erro instanceof ApiError && erro.status === 404) {
+          definirNaoEncontrada(true);
+        } else {
+          definirErroCarregamento(
+            erro instanceof Error && erro.message
+              ? erro.message
+              : 'Não foi possível carregar os dados da doação.',
+          );
+        }
+      })
+      .finally(() => {
+        if (ativo) definirCarregandoDoacao(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [ehEdicao, doacaoId]);
+
+  useEffect(() => {
     if (salvou && !estaSalvando) {
-      navigation.replace('HistoricoDoacoes');
+      if (ehEdicao) navigation.goBack();
+      else navigation.replace('HistoricoDoacoes');
     }
-  }, [salvou, estaSalvando, navigation]);
+  }, [salvou, estaSalvando, ehEdicao, navigation]);
 
   async function salvarDoacao() {
     if (gravacaoEmAndamento.current) return;
@@ -83,11 +131,16 @@ export default function TelaFormularioDoacao({ navigation, route }) {
     Keyboard.dismiss();
 
     try {
-      await cadastrarDoacao({
+      const payload = {
         tipoItem: tipoItem.trim().replace(/\s+/g, ' '),
         quantidade: Number(quantidade),
         pontoDestino: pontoDestino.trim(),
-      });
+      };
+      if (ehEdicao) {
+        await editarDoacao(doacaoId, payload);
+      } else {
+        await cadastrarDoacao(payload);
+      }
       definirSalvou(true);
     } catch (erro) {
       definirErroSalvamento(
@@ -101,12 +154,50 @@ export default function TelaFormularioDoacao({ navigation, route }) {
     }
   }
 
+  if (carregandoDoacao) {
+    return (
+      <Pagina>
+        <View style={estilos.carregando}>
+          <ActivityIndicator size="large" color={CORES.primaria} accessibilityLabel="Carregando doação" />
+          <Text style={estilos.ajuda}>Carregando dados da doação...</Text>
+        </View>
+      </Pagina>
+    );
+  }
+
+  if (naoEncontrada) {
+    return (
+      <Pagina>
+        <MensagemEstado
+          titulo="Doação não encontrada"
+          descricao="Este registro não está mais disponível para edição."
+        >
+          <Botao titulo="Ver histórico" aoPressionar={() => navigation.navigate('HistoricoDoacoes')} />
+        </MensagemEstado>
+      </Pagina>
+    );
+  }
+
+  if (erroCarregamento.length > 0) {
+    return (
+      <Pagina>
+        <MensagemEstado erro titulo="Não foi possível abrir a edição" descricao={erroCarregamento}>
+          <Botao titulo="Voltar" aoPressionar={() => navigation.goBack()} />
+        </MensagemEstado>
+      </Pagina>
+    );
+  }
+
   return (
     <Pagina rolavel comTeclado>
       <CabecalhoSecao
-        sobretitulo="UM GESTO QUE TRANSFORMA"
-        titulo="Cadastre sua doação."
-        descricao="Preencha os três campos para registrar a ajuda na API e escolher seu ponto de destino."
+        sobretitulo={ehEdicao ? 'ATUALIZAR REGISTRO' : 'UM GESTO QUE TRANSFORMA'}
+        titulo={ehEdicao ? 'Editar doação' : 'Cadastre sua doação.'}
+        descricao={
+          ehEdicao
+            ? 'Ajuste os dados abaixo. O ID e a data original do registro serão preservados.'
+            : 'Preencha os três campos para registrar a ajuda na API e escolher seu ponto de destino.'
+        }
       />
       <View style={[ESTILOS.cartao, estilos.formulario]}>
         <View style={estilos.campo}>
@@ -199,7 +290,7 @@ export default function TelaFormularioDoacao({ navigation, route }) {
 
       <View style={estilos.acoes}>
         <Botao
-          titulo="Salvar doação"
+          titulo={ehEdicao ? 'Salvar alterações' : 'Salvar doação'}
           aoPressionar={salvarDoacao}
           carregando={estaSalvando}
           desabilitado={estaSalvando}
@@ -225,6 +316,7 @@ const estilos = StyleSheet.create({
   entradaErro: { borderColor: CORES.erro },
   ajuda: { color: CORES.secundario, fontSize: 13, lineHeight: 20 },
   pontos: { gap: 10, marginTop: 4 },
+  carregando: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 40, gap: 12 },
   carregandoPontos: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
   erroPontos: { gap: 10 },
   opcao: {
