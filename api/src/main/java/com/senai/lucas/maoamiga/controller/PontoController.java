@@ -5,6 +5,11 @@ import com.senai.lucas.maoamiga.dto.PontoResponseDTO;
 import com.senai.lucas.maoamiga.service.PontoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +28,14 @@ public class PontoController {
     @GetMapping
     public ResponseEntity<List<PontoResponseDTO>> findAll() {
         return ResponseEntity.ok(pontoService.findAll());
+    }
+
+    @GetMapping("/filtro")
+    public ResponseEntity<Page<PontoResponseDTO>> findByFiltro(
+            @RequestParam(required = false) String filtro,
+            @ParameterObject @PageableDefault(page = 0, size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(pontoService.findByFiltro(filtro, pageable));
     }
 
     @GetMapping("/{id}")
@@ -50,4 +63,3 @@ public class PontoController {
         pontoService.delete(id);
     }
 }
-

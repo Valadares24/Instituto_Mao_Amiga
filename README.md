@@ -21,6 +21,7 @@ cd api
 | Método | URL | Descrição | Status |
 |---|---|---|---|
 | `GET` | `http://localhost:8080/api/v1/pontos` | Lista todos os pontos de coleta/distribuição | `200 OK` |
+| `GET` | `http://localhost:8080/api/v1/pontos/filtro?filtro=...&page=0&size=10` | Busca paginada por nome ou bairro (`content` + `page`, padrão 10 itens ordenados por `nome`) | `200 OK` |
 | `GET` | `http://localhost:8080/api/v1/pontos/{id}` | Busca um ponto pelo UUID | `200 OK` / `404 Not Found` |
 | `POST` | `http://localhost:8080/api/v1/pontos` | Cadastra um novo ponto (com validação Bean Validation) | `201 Created` / `400 Bad Request` |
 | `PUT` | `http://localhost:8080/api/v1/pontos/{id}` | Atualiza um ponto existente | `200 OK` / `400 Bad Request` / `404 Not Found` |
@@ -42,6 +43,135 @@ cd api
   ![POST ponto 400](docs/swagger/n2-1-post-400.png)
 - **GET `/api/v1/pontos/{id}` com id inexistente (404):**
   ![GET ponto 404](docs/swagger/n2-1-get-404.png)
+
+### Busca Paginada de Pontos (`[N2-2]`)
+
+O endpoint `GET /api/v1/pontos/filtro` busca por `nome` ou `bairro` sem diferenciar maiúsculas/minúsculas (`@Query`), devolve no formato `content` + `page` (`spring.data.web.pageable.serialization-mode=via_dto`), usa padrão de 10 itens ordenados por `nome` (`@PageableDefault`) e aceita ordenação customizada como `sort=bairro,asc`. A carga inicial possui 25 pontos reais em Goiânia.
+
+#### 1. Sem filtro (página 0, 10 itens ordenados por `nome`)
+
+```http
+GET http://localhost:8080/api/v1/pontos/filtro?page=0&size=10
+```
+
+```json
+{
+  "content": [
+    {
+      "id": "11e395fe-f1a7-4e0f-9ef8-d64ad1035a13",
+      "nome": "Apoio Solidário Setor Bela Vista",
+      "endereco": "Avenida T-2, nº 980, Goiânia-GO",
+      "bairro": "Setor Bela Vista",
+      "horario": "Seg a Sex, 8h às 16h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "47411513-b44d-449f-a837-61844faf5aa9",
+      "nome": "Casa Solidária Setor Jaó",
+      "endereco": "Avenida Professor Venerando de Freitas, nº 430, Goiânia-GO",
+      "bairro": "Setor Jaó",
+      "horario": "Ter a Sáb, 9h às 15h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "ad86a581-ef99-4137-9bf8-e67b3b0a9663",
+      "nome": "Casa de Apoio Praça Cívica",
+      "endereco": "Rua 4, nº 280, Goiânia-GO",
+      "bairro": "Centro",
+      "horario": "Seg a Sáb, 9h às 17h",
+      "tipo": "distribuição"
+    },
+    "... (10 itens na página 0)"
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 25,
+    "totalPages": 3
+  }
+}
+```
+
+#### 2. Filtrando por bairro (`filtro=Bueno`)
+
+```http
+GET http://localhost:8080/api/v1/pontos/filtro?filtro=Bueno&page=0&size=10
+```
+
+```json
+{
+  "content": [
+    {
+      "id": "d9a4ce38-bad9-4b1f-8002-24a8d2626458",
+      "nome": "Espaço Mão Amiga T-63",
+      "endereco": "Avenida T-63, nº 1420, Goiânia-GO",
+      "bairro": "Setor Bueno",
+      "horario": "Seg a Sex, 9h às 18h",
+      "tipo": "distribuição"
+    },
+    {
+      "id": "215281e4-0271-4817-b306-5eca8fccb26c",
+      "nome": "Núcleo Comunitário Parque Vaca Brava",
+      "endereco": "Avenida T-10, nº 890, Goiânia-GO",
+      "bairro": "Setor Bueno",
+      "horario": "Ter a Sáb, 8h às 14h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "53a25bb8-4b8a-4ced-b359-280e2c6065d1",
+      "nome": "Ponto de Coleta Setor Bueno",
+      "endereco": "Rua T-30, nº 1200, Goiânia-GO",
+      "bairro": "Setor Bueno",
+      "horario": "Seg a Sex, 8h às 17h",
+      "tipo": "coleta"
+    }
+  ],
+  "page": {
+    "size": 10,
+    "number": 0,
+    "totalElements": 3,
+    "totalPages": 1
+  }
+}
+```
+
+#### 3. Segunda página (`page=1&size=10`)
+
+```http
+GET http://localhost:8080/api/v1/pontos/filtro?page=1&size=10
+```
+
+```json
+{
+  "content": [
+    {
+      "id": "0da14ade-46f2-43d7-a2ef-ce18042584cf",
+      "nome": "Ponto de Coleta Parque Atheneu",
+      "endereco": "Avenida Parque Atheneu, nº 1250, Goiânia-GO",
+      "bairro": "Parque Atheneu",
+      "horario": "Seg a Sex, 9h às 17h",
+      "tipo": "coleta"
+    },
+    {
+      "id": "7ebe745f-74b5-417b-8b18-9f334006afae",
+      "nome": "Ponto de Coleta Setor Aeroporto",
+      "endereco": "Rua 18-A, nº 520, Goiânia-GO",
+      "bairro": "Setor Aeroporto",
+      "horario": "Seg a Sex, 8h às 17h",
+      "tipo": "coleta"
+    },
+    "... (10 itens na página 1)"
+  ],
+  "page": {
+    "size": 10,
+    "number": 1,
+    "totalElements": 25,
+    "totalPages": 3
+  }
+}
+```
+
+> **Ordenação por bairro:** chamando `GET /api/v1/pontos/filtro?sort=bairro,asc&page=0&size=10`, a ordenação passa a ser crescente por `bairro` (iniciando por `Centro`, `Jardim América`, `Jardim Goiás`, ...).
 
 ## Executar o projeto
 

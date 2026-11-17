@@ -13,6 +13,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,16 +40,58 @@ class PontoControllerTest {
     private DataInitializer dataInitializer;
 
     @Test
-    void deveCarregarPeloMenosOitoPontosIniciaisSemDuplicar() throws Exception {
+    void deveCarregarPeloMenosVinteECincoPontosIniciaisSemDuplicar() throws Exception {
         long antes = pontoRepository.count();
-        assertThat(antes).isGreaterThanOrEqualTo(8);
+        assertThat(antes).isGreaterThanOrEqualTo(25);
 
         dataInitializer.run();
         assertThat(pontoRepository.count()).isEqualTo(antes);
 
         mockMvc.perform(get("/api/v1/pontos"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(greaterThanOrEqualTo(8)));
+                .andExpect(jsonPath("$.length()").value(greaterThanOrEqualTo(25)));
+    }
+
+    @Test
+    void deveFiltrarEPaginarPontosComPadraoDeDezOrdenadosPorNome() throws Exception {
+        MvcResult semFiltro = mockMvc.perform(get("/api/v1/pontos/filtro"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(10))
+                .andExpect(jsonPath("$.page.size").value(10))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(greaterThanOrEqualTo(25)))
+                .andReturn();
+
+        JsonNode page0 = objectMapper.readTree(semFiltro.getResponse().getContentAsString());
+        List<String> nomes = new ArrayList<>();
+        page0.get("content").forEach(n -> nomes.add(n.get("nome").asText()));
+        assertThat(nomes).isSortedAccordingTo(String::compareTo);
+
+        mockMvc.perform(get("/api/v1/pontos/filtro")
+                        .param("filtro", "bueno")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(greaterThanOrEqualTo(3)))
+                .andExpect(jsonPath("$.content[0].bairro").value("Setor Bueno"));
+
+        mockMvc.perform(get("/api/v1/pontos/filtro")
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(10))
+                .andExpect(jsonPath("$.page.number").value(1));
+
+        MvcResult ordenadoPorBairro = mockMvc.perform(get("/api/v1/pontos/filtro")
+                        .param("sort", "bairro,asc")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode bairroNode = objectMapper.readTree(ordenadoPorBairro.getResponse().getContentAsString());
+        List<String> bairros = new ArrayList<>();
+        bairroNode.get("content").forEach(n -> bairros.add(n.get("bairro").asText()));
+        assertThat(bairros).isSortedAccordingTo(String::compareTo);
     }
 
     @Test
@@ -156,4 +200,3 @@ class PontoControllerTest {
                 .andExpect(status().isNotFound());
     }
 }
-
